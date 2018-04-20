@@ -6,7 +6,7 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-const conString = '';
+const conString = 'postgres://localhost:5432';
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', error => {
@@ -24,7 +24,9 @@ app.get('/new', (request, response) => {
 
 // REVIEW: These are routes for making API calls to enact CRUD operations on our database.
 app.get('/articles', (request, response) => {
-  client.query(``)
+  client.query(`SELECT * FROM articles
+  INNER JOIN authors 
+  ON articles.author_id=authors.author_id;`)
     .then(result => {
       response.send(result.rows);
     })
@@ -35,8 +37,18 @@ app.get('/articles', (request, response) => {
 
 app.post('/articles', (request, response) => {
   client.query(
-    '',
-    [],
+    `INSERT INTO
+    articles (title, author, "authorUrl", category, "publishedOn", body) 
+    VALUES ($1, $2, $3, $4, $5, $6,);
+    `,
+    [
+      request.body.title,
+      request.body.author,
+      request.body.authorUrl,
+      request.body.category,
+      request.body.publishedOn,
+      request.body.body
+    ],
     function(err) {
       if (err) console.error(err);
       // REVIEW: This is our second query, to be executed when this first query is complete.
@@ -148,7 +160,7 @@ function loadArticles() {
             FROM authors
             WHERE author=$5;
             `,
-              [ele.title, ele.category, ele.publishedOn, ele.body, ele.author]
+            [ele.title, ele.category, ele.publishedOn, ele.body, ele.author]
             )
           })
         })
